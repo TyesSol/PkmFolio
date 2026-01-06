@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pokémon Portfolio</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ccircle cx='8' cy='8' r='8' fill='%23d4af37'/%3E%3C/svg%3E">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0"></script>
+    <link rel="stylesheet" href="/styles.css">
+    <!-- Styles have been moved to styles.css to avoid rendering raw CSS text in the page -->
+</head>
+<body>
+    <div class="header">
+        <div class="logo">
+            <div class="logo-icon"></div>
+            <div class="logo-text">Pokémon <span class="gold">Portfolio</span></div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="grid">
+            <div>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-label">Total Investi</div>
+                        <div class="stat-value" id="totalInvested">0,00 €</div>
+                        <div class="stat-subtext" id="cardCount">0 carte (0 ligne)</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Valeur Actuelle</div>
+                        <div class="stat-value" id="currentValue">0,00 €</div>
+                        <div class="stat-subtext">Prix manuel</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">PNL Non Réalisé</div>
+                        <div class="stat-value profit" id="unrealizedPnL">+0,00 €</div>
+                        <div class="stat-subtext profit" id="unrealizedPnLPercent">+0.0%</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">PNL Réalisé</div>
+                        <div class="stat-value" id="realizedPnL">+0,00 €</div>
+                        <div class="stat-subtext" id="soldCount">0 vendue</div>
+                    </div>
+                </div>
+
+                <div class="global-stats">
+                    <div class="global-stats-title">📊 Statistiques Globales</div>
+                    <div class="global-stats-grid">
+                        <div class="global-stat-item">
+                            <div class="global-stat-label">Dépenses Totales</div>
+                            <div class="global-stat-value" id="totalExpenses">0,00 €</div>
+                        </div>
+                        <div class="global-stat-item">
+                            <div class="global-stat-label">Ventes Totales</div>
+                            <div class="global-stat-value profit" id="totalSales">0,00 €</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="filters">
+                    <div class="filter-group">
+                        <button class="btn active" data-filter="all" data-action="filterStatus" data-value="all">Toutes</button>
+                        <button class="btn" data-filter="unsold" data-action="filterStatus" data-value="unsold">Non vendues</button>
+                        <button class="btn" data-filter="sold" data-action="filterStatus" data-value="sold">Vendues</button>
+                        <div class="divider"></div>
+                        <button class="btn" data-action="filterCondition" data-value="NM">NM</button>
+                        <button class="btn" data-action="filterCondition" data-value="EX">EX</button>
+                        <button class="btn" data-action="filterCondition" data-value="LP">LP</button>
+                        <button class="btn" data-action="filterCondition" data-value="GOOD">GOOD</button>
+                    </div>
+                    <button class="btn btn-primary" id="addCardBtn" data-action="openModal">+ Ajouter une carte</button>
+                </div>
+
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Carte</th>
+                                <th>État</th>
+                                <th>Langue</th>
+                                <th>Prix Achat</th>
+                                <th>Prix Actuel</th>
+                                <th>Vendue</th>
+                                <th>Prix Vente</th>
+                                <th>P&L Non Réal.</th>
+                                <th>P&L Réal.</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cardsTableBody">
+                            <tr>
+                                <td colspan="10">
+                                    <div class="empty-state">
+                                        <div class="empty-icon">🎴</div>
+                                        <h3 style="color: #d4af37; margin-bottom: 0.5rem;">Aucune carte dans ton portfolio</h3>
+                                        <p>Clique sur "Ajouter une carte" pour commencer</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div>
+                <div class="portfolio-summary">
+                    <div class="portfolio-summary-title">Analyse du Portfolio</div>
+                    <div class="portfolio-summary-text">Statistiques et performance en temps réel</div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">Évolution du Portfolio</div>
+                    <div class="chart-container">
+                        <canvas id="portfolioChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="card" style="margin-top: 1.5rem;">
+                    <div class="card-title">Performance des Cartes</div>
+                    <div id="performersContainer"></div>
+                </div>
+
+                <div class="card" style="margin-top: 1.5rem;">
+                    <div class="card-title">Analyse Mensuelle</div>
+                    <div class="chart-container">
+                        <canvas id="monthlyChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="cardModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="modalTitle">Ajouter une carte</h2>
+                <button class="close-btn" data-action="closeModal" type="button">×</button>
+            </div>
+            <div class="modal-body">
+                <form id="cardForm" novalidate>
+                    <input type="hidden" id="cardId" name="cardId">
+                    <input type="hidden" id="isCloning" name="isCloning">
+                    <div class="form-group">
+                        <label for="cardName">Nom de la carte *</label>
+                        <input type="text" id="cardName" name="cardName" required placeholder="Ex: Dracaufeu V Alt Art">
+                    </div>
+                    <div class="form-group">
+                        <label for="cardImage">URL de l'image *</label>
+                        <input type="url" id="cardImage" name="cardImage" required placeholder="https://...">
+                    </div>
+                    <div class="form-group">
+                        <label for="cardmarketUrl">Lien Cardmarket *</label>
+                        <input type="url" id="cardmarketUrl" name="cardmarketUrl" required placeholder="https://www.cardmarket.com/...">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="cardCondition">État *</label>
+                            <select id="cardCondition" name="cardCondition" required>
+                                <option value="NM">NM (Near Mint)</option>
+                                <option value="EX">EX (Excellent)</option>
+                                <option value="LP">LP (Light Played)</option>
+                                <option value="GOOD">GOOD</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="cardLanguage">Langue *</label>
+                            <select id="cardLanguage" name="cardLanguage" required>
+                                <option value="FR">FR (Français)</option>
+                                <option value="ENG">ENG (Anglais)</option>
+                                <option value="JP">JP (Japonais)</option>
+                                <option value="DE">DE (Allemand)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="purchasePrice">Prix d'achat (€) *</label>
+                            <input type="number" id="purchasePrice" name="purchasePrice" step="0.01" required placeholder="0.00">
+                        </div>
+                        <div class="form-group">
+                            <label for="currentPrice">Prix actuel (€)</label>
+                            <input type="number" id="currentPrice" name="currentPrice" step="0.01" placeholder="0.00">
+                            <small style="color: #808080; font-size: 0.75rem;">Partagé entre exemplaires identiques</small>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="isSold" name="isSold">
+                            <label for="isSold" style="margin: 0;">Cette carte a été vendue</label>
+                        </div>
+                    </div>
+                    <div class="form-group" id="salePriceGroup" style="display: none;">
+                        <label for="salePrice">Prix de vente (€) *</label>
+                        <input type="number" id="salePrice" name="salePrice" step="0.01" placeholder="0.00">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn" type="button" data-action="closeModal">Annuler</button>
+                <button class="btn btn-primary" type="submit" form="cardForm" id="submitBtn">Ajouter</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let cards = JSON.parse(localStorage.getItem('pokemonCards') || '[]');
+        // Sanitize any leftover placeholder values saved previously
+        sanitizeCardsArray(cards);
+        let filters = { status: 'all', condition: 'all' };
+        let charts = {};
+        let expandedGroups = new Set();
+
+
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initCharts();
+            renderCards();
+            updateStats();
+            renderPerformers();
+            attachEventHandlers(); // wire dynamic event listeners
+
+            // bind static controls
+            document.getElementById('addCardBtn')?.addEventListener('click', openModal);
+            document.getElementById('isSold')?.addEventListener('change', toggleSoldFields);
+            document.getElementById('cardForm')?.addEventListener('submit', saveCard);
+            document.querySelectorAll('[data-action="filterStatus"]').forEach(btn => {
+                btn.addEventListener('click', (e) => filterByStatus(e.currentTarget.dataset.value, e.currentTarget));
+            });
+            document.querySelectorAll('[data-action="filterCondition"]').forEach(btn => {
+                btn.addEventListener('click', (e) => filterByCondition(e.currentTarget.dataset.value, e.currentTarget));
+            });
+        });
+
+        function getCardKey(card) {
+            return `${card.name}|||${card.condition}|||${card.language}`;
+        }
+
+        function groupCards(cardsList) {
+            const groups = {};
+            cardsList.forEach(card => {
+                const key = getCardKey(card);
+                if (!groups[key]) {
+                    groups[key] = {
+                        key, name: card.name, imageUrl: card.imageUrl, cardmarketUrl: card.cardmarketUrl,
+                        condition: card.condition, language: card.language, cards: [], count: 0, totalInvested: 0,
+                        currentValue: 0, currentPrice: card.currentPrice, unrealizedPnL: 0, realizedPnL: 0
+                    };
+                }
+                const group = groups[key];
+                group.cards.push(card);
+                group.count++;
+                group.totalInvested += card.purchasePrice;
+                if (!card.isSold && card.currentPrice) {
+                    group.currentValue += card.currentPrice;
+                    group.unrealizedPnL += (card.currentPrice - card.purchasePrice);
+                }
+                if (card.isSold && card.salePrice) {
+                    group.realizedPnL += (card.salePrice - card.purchasePrice);
+                }
+                if (card.currentPrice !== null && card.currentPrice !== undefined) {
+                    group.currentPrice = card.currentPrice;
+                }
+            });
+            return Object.values(groups);
+        }
+
+        function openModal(editCard = null, cloneFromCard = null) {
+            document.getElementById('cardModal').classList.add('active');
+            document.getElementById('cardForm').reset();
+            document.getElementById('cardId').value = '';
+            document.getElementById('isCloning').value = '';
+            document.getElementById('salePriceGroup').style.display = 'none';
+            
+            if (editCard) {
+                document.getElementById('modalTitle').textContent = 'Modifier une carte';
+                document.getElementById('submitBtn').textContent = 'Enregistrer';
+                document.getElementById('cardId').value = editCard.id;
+                document.getElementById('cardName').value = editCard.name;
+                document.getElementById('cardImage').value = editCard.imageUrl;
+                document.getElementById('cardmarketUrl').value = editCard.cardmarketUrl;
+                document.getElementById('cardCondition').value = editCard.condition;
+                document.getElementById('cardLanguage').value = editCard.language;
+                document.getElementById('purchasePrice').value = editCard.purchasePrice;
+                document.getElementById('currentPrice').value = editCard.currentPrice || '';
+                document.getElementById('isSold').checked = editCard.isSold;
+                if (editCard.isSold) {
+                    document.getElementById('salePriceGroup').style.display = 'block';
+                    document.getElementById('salePrice').value = editCard.salePrice || '';
+                }
+                ['cardName', 'cardImage', 'cardmarketUrl', 'cardLanguage'].forEach(id => {
+                    document.getElementById(id).disabled = false;
+                });
+            } else if (cloneFromCard) {
+                document.getElementById('modalTitle').textContent = 'Cloner une carte';
+                document.getElementById('submitBtn').textContent = 'Cloner';
+                document.getElementById('isCloning').value = 'true';
+                document.getElementById('cardName').value = cloneFromCard.name;
+                document.getElementById('cardImage').value = cloneFromCard.imageUrl;
+                document.getElementById('cardmarketUrl').value = cloneFromCard.cardmarketUrl;
+                document.getElementById('cardLanguage').value = cloneFromCard.language;
+                ['cardName', 'cardImage', 'cardmarketUrl', 'cardLanguage'].forEach(id => {
+                    document.getElementById(id).disabled = true;
+                });
+                if (cloneFromCard.currentPrice) {
+                    document.getElementById('currentPrice').value = cloneFromCard.currentPrice;
+                }
+            } else {
+                document.getElementById('modalTitle').textContent = 'Ajouter une carte';
+                document.getElementById('submitBtn').textContent = 'Ajouter';
+                ['cardName', 'cardImage', 'cardmarketUrl', 'cardLanguage'].forEach(id => {
+                    document.getElementById(id).disabled = false;
+                });
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('cardModal').classList.remove('active');
+        }
+
+        function toggleSoldFields() {
+            const isSold = document.getElementById('isSold').checked;
+            document.getElementById('salePriceGroup').style.display = isSold ? 'block' : 'none';
+            document.getElementById('salePrice').required = isSold;
+        }
+
+        function saveCard(event) {
+            event.preventDefault();
+            const cardId = document.getElementById('cardId').value;
+            const cardData = {
+                name: document.getElementById('cardName').value,
+                imageUrl: document.getElementById('cardImage').value,
+                cardmarketUrl: document.getElementById('cardmarketUrl').value,
+                condition: document.getElementById('cardCondition').value,
+                language: document.getElementById('cardLanguage').value,
+                purchasePrice: parseFloat(document.getElementById('purchasePrice').value),
+                currentPrice: parseFloat(document.getElementById('currentPrice').value) || null,
+                isSold: document.getElementById('isSold').checked,
+                salePrice: document.getElementById('isSold').checked ? parseFloat(document.getElementById('salePrice').value) : null,
+            };
+
+            if (cardId) {
+                cards = cards.map(c => c.id === cardId ? { ...c, ...cardData, updatedAt: new Date().toISOString() } : c);
+            } else {
+                const card = {
+                    ...cardData,
+                    id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+                    createdAt: new Date().toISOString()
+                };
+                const similarCards = cards.filter(c => getCardKey(c) === getCardKey(card));
+                if (similarCards.length > 0 && similarCards[0].currentPrice !== null) {
+                    card.currentPrice = similarCards[0].currentPrice;
+                }
+                cards.push(card);
+            }
+
+            localStorage.setItem('pokemonCards', JSON.stringify(cards));
+            closeModal();
+            renderCards();
+            updateStats();
+            updateCharts();
+            renderPerformers();
+        }
+
+        function editCard(cardId) {
+            const card = cards.find(c => c.id === cardId);
+            if (card) openModal(card);
+        }
+
+        function cloneCard(cardId) {
+            const card = cards.find(c => c.id === cardId);
+            if (card) openModal(null, card);
+        }
+
+        function deleteCard(id) {
+            if (confirm('Êtes-vous sûr de vouloir supprimer cette carte ?')) {
+                cards = cards.filter(c => c.id !== id);
+                localStorage.setItem('pokemonCards', JSON.stringify(cards));
+                renderCards();
+                updateStats();
+                updateCharts();
+                renderPerformers();
+            }
+        }
+
+        function updateGroupPrice(groupKey) {
+            const newPrice = prompt('Nouveau prix actuel (€) - s\'appliquera à tous les exemplaires :');
+            if (newPrice !== null && !isNaN(parseFloat(newPrice))) {
+                const price = parseFloat(newPrice);
+                cards = cards.map(c => getCardKey(c) === groupKey ? { ...c, currentPrice: price } : c);
+                localStorage.setItem('pokemonCards', JSON.stringify(cards));
+                renderCards();
+                updateStats();
+                updateCharts();
+                renderPerformers();
+            }
+        }
+
+        function toggleSoldStatus(cardId, value) {
+            const card = cards.find(c => c.id === cardId);
+            if (!card) return;
+            const wasSold = card.isSold;
+            card.isSold = value === 'yes';
+            if (card.isSold && !wasSold) {
+                const salePrice = prompt('Prix de vente (€) :');
+                if (salePrice !== null && !isNaN(parseFloat(salePrice))) {
+                    card.salePrice = parseFloat(salePrice);
+                } else {
+                    card.isSold = false;
+                    return;
+                }
+            } else if (!card.isSold) {
+                card.salePrice = null;
+            }
+            localStorage.setItem('pokemonCards', JSON.stringify(cards));
+            renderCards();
+            updateStats();
+            updateCharts();
+            renderPerformers();
+        }
+
+        function toggleGroup(groupKey) {
+            expandedGroups.has(groupKey) ? expandedGroups.delete(groupKey) : expandedGroups.add(groupKey);
+            renderCards();
+        }
+
+        function filterByStatus(status, btn) {
+            filters.status = status;
+            filters.condition = 'all';
+            document.querySelectorAll('[data-filter]').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.filter-group .btn:not([data-filter])').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            renderCards();
+        }
+
+        function filterByCondition(condition, btn) {
+            if (filters.condition === condition) {
+                filters.condition = 'all';
+                btn.classList.remove('active');
+            } else {
+                document.querySelectorAll('.filter-group .btn:not([data-filter])').forEach(b => b.classList.remove('active'));
+                filters.condition = condition;
+                btn.classList.add('active');
+            }
+            renderCards();
+        }
+
+        function renderCards() {
+            let filteredCards = cards;
+            if (filters.status === 'sold') filteredCards = filteredCards.filter(c => c.isSold);
+            else if (filters.status === 'unsold') filteredCards = filteredCards.filter(c => !c.isSold);
+            if (filters.condition !== 'all') filteredCards = filteredCards.filter(c => c.condition === filters.condition);
+
+            const tbody = document.getElementById('cardsTableBody');
+            if (filteredCards.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="10"><div class="empty-state"><div class="empty-icon">🎴</div><h3 style="color: #d4af37; margin-bottom: 0.5rem;">Aucune carte trouvée</h3><p>Essaie de modifier les filtres ou ajoute des cartes</p></div></td></tr>`;
+                return;
+            }
+
+            const groups = groupCards(filteredCards);
+            let html = '';
+            groups.forEach(group => {
+                const isExpanded = expandedGroups.has(group.key);
+                const unrealizedPnLPercent = group.totalInvested > 0 ? (group.unrealizedPnL / group.totalInvested) * 100 : 0;
+                const escapedKey = group.key.replace(/'/g, "\\'");
+                html += `<tr class="group-row"><td><div class="card-cell">${group.count > 1 ? `<button class="expand-btn ${isExpanded ? '' : 'collapsed'}" type="button" aria-label="Afficher/masquer le groupe" data-action="toggleGroup" data-key="${escapedKey}"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 298"><path d="M256 298L0 0h512L256 298z"/></svg></button>` : '<div style="width: 18px;"></div>'}<div class="card-img-container"><img src="${group.imageUrl || ''}" alt="${group.name}" class="card-img""><div class="card-count-badge">${group.count}</div><button class="clone-btn" type="button" aria-label="Cloner la carte" data-action="cloneCard" data-id="${group.cards[0].id}" title="Cloner">+</button></div><div class="card-info"><a href="${group.cardmarketUrl}" target="_blank" class="card-name">${group.name}</a></div></div></td><td><span class="badge">${group.condition}</span></td><td><span class="badge">${group.language}</span></td><td class="text-right"><strong>${formatCurrency(group.totalInvested)}</strong></td><td class="text-right"><div class="price-with-icon"><span>${group.currentPrice ? formatCurrency(group.currentPrice * group.count) : 'N/A'}</span><button class="refresh-price-btn" type="button" aria-label="Actualiser le prix" data-action="updateGroupPrice" data-key="${escapedKey}" title="Actualiser le prix">🔄</button></div></td><td class="text-center">${group.count === 1 ? `<select class="sold-select" name="soldSelect" aria-label="Vendue" data-role="sold-select" data-id="${group.cards[0].id}"><option value="no" ${!group.cards[0].isSold ? 'selected' : ''}>Non</option><option value="yes" ${group.cards[0].isSold ? 'selected' : ''}>Oui</option></select>` : '-'}</td><td class="text-right">${group.count === 1 && group.cards[0].salePrice ? formatCurrency(group.cards[0].salePrice) : '-'}</td><td class="text-right"><div class="${group.unrealizedPnL >= 0 ? 'profit' : 'loss'}"><strong>${formatCurrency(group.unrealizedPnL)}</strong></div><div style="font-size: 0.875rem;" class="${unrealizedPnLPercent >= 0 ? 'profit' : 'loss'}">${unrealizedPnLPercent >= 0 ? '+' : ''}${unrealizedPnLPercent.toFixed(2)}%</div></td><td class="text-right ${group.realizedPnL >= 0 ? 'profit' : 'loss'}">${group.realizedPnL !== 0 ? formatCurrency(group.realizedPnL) : '-'}</td><td><div class="actions"><button class="icon-btn" type="button" aria-label="Modifier la carte" data-action="editCard" data-id="${group.cards[0].id}" title="Modifier"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path d="M441 58.9L453.1 71c9.4 9.4 9.4 24.6 0 33.9L424 134.1 377.9 88 407 58.9c9.4-9.4 24.6-9.4 33.9 0zM209.8 256.2L344 122l46.1 46.1-134.3 134.2c-2.9 2.9-6.5 5-10.4 6.1L186.9 325l16.7-58.5c1.1-3.9 3.2-7.5 6.1-10.4zM373.1 25L175.8 222.2c-8.7 8.7-15 19.4-18.3 31.1l-28.6 100c-2.4 8.4-.1 17.4 6.1 23.6s15.2 8.5 23.6 6.1l100-28.6c11.8-3.4 22.5-9.7 31.1-18.3L487 138.9c28.1-28.1 28.1-73.7 0-101.8L474.9 25c-28.1-28.1-73.7-28.1-101.8 0zM88 64C39.4 64 0 103.4 0 152V424c0 48.6 39.4 88 88 88H360c48.6 0 88-39.4 88-88V312c0-13.3-10.7-24-24-24s-24 10.7-24 24V424c0 22.1-17.9 40-40 40H88c-22.1 0-40-17.9-40-40V152c0-22.1 17.9-40 40-40H200c13.3 0 24-10.7 24-24s-10.7-24-24-24H88z"/></svg></button><button class="icon-btn danger" type="button" aria-label="Supprimer la carte" data-action="deleteCard" data-id="${group.cards[0].id}" title="Supprimer"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M170.5 51.6L151.5 80h145l-19-28.4c-1.5-2.2-4-3.6-6.7-3.6H177.1c-2.7 0-5.2 1.3-6.7 3.6zm147-26.6L354.2 80H368h48 8c13.3 0 24 10.7 24 24s-10.7 24-24 24h-8V432c0 44.2-35.8 80-80 80H112c-44.2 0-80-35.8-80-80V128H24c-13.3 0-24-10.7-24-24S10.7 80 24 80h8H80h13.8l36.7-55.1C140.9 9.4 158.4 0 177.1 0h93.7c18.7 0 36.2 9.4 46.6 24.9zM80 128V432c0 17.7 14.3 32 32 32H336c17.7 0 32-14.3 32-32V128H80zm80 64V400c0 8.8-7.2 16-16 16s-16-7.2-16-16V192c0-8.8 7.2-16 16-16s16 7.2 16 16zm80 0V400c0 8.8-7.2 16-16 16s-16-7.2-16-16V192c0-8.8 7.2-16 16-16s16 7.2 16 16zm80 0V400c0 8.8-7.2 16-16 16s-16-7.2-16-16V192c0-8.8 7.2-16 16-16s16 7.2 16 16z"/></svg></button></div></td></tr>`;
+                if (isExpanded && group.count > 1) {
+                    group.cards.forEach(card => {
+                        const cardUnrealizedPnL = card.isSold ? 0 : (card.currentPrice || 0) - card.purchasePrice;
+                        const cardRealizedPnL = card.isSold && card.salePrice ? card.salePrice - card.purchasePrice : 0;
+                        html += `<tr class="detail-row"><td style="padding-left: 3.5rem;"><span style="color: #808080; font-size: 0.875rem;">#${card.id.slice(-6)}</span></td><td><span style="color: #b8b8b8; font-size: 0.875rem;">${card.condition}</span></td><td><span style="color: #b8b8b8; font-size: 0.875rem;">${card.language}</span></td><td class="text-right">${formatCurrency(card.purchasePrice)}</td><td class="text-right">${card.currentPrice ? formatCurrency(card.currentPrice) : 'N/A'}</td><td class="text-center"><select class="sold-select" data-role="sold-select" data-id="${card.id}"><option value="no" ${!card.isSold ? 'selected' : ''}>Non</option><option value="yes" ${card.isSold ? 'selected' : ''}>Oui</option></select></td><td class="text-right">${card.salePrice ? formatCurrency(card.salePrice) : '-'}</td><td class="text-right ${cardUnrealizedPnL >= 0 ? 'profit' : 'loss'}">${!card.isSold && card.currentPrice ? formatCurrency(cardUnrealizedPnL) : '-'}</td><td class="text-right ${cardRealizedPnL >= 0 ? 'profit' : 'loss'}">${card.isSold && card.salePrice ? formatCurrency(cardRealizedPnL) : '-'}</td><td><div class="actions"><button class="icon-btn" data-action="editCard" data-id="${card.id}" title="Modifier"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path d="M441 58.9L453.1 71c9.4 9.4 9.4 24.6 0 33.9L424 134.1 377.9 88 407 58.9c9.4-9.4 24.6-9.4 33.9 0zM209.8 256.2L344 122l46.1 46.1-134.3 134.2c-2.9 2.9-6.5 5-10.4 6.1L186.9 325l16.7-58.5c1.1-3.9 3.2-7.5 6.1-10.4zM373.1 25L175.8 222.2c-8.7 8.7-15 19.4-18.3 31.1l-28.6 100c-2.4 8.4-.1 17.4 6.1 23.6s15.2 8.5 23.6 6.1l100-28.6c11.8-3.4 22.5-9.7 31.1-18.3L487 138.9c28.1-28.1 28.1-73.7 0-101.8L474.9 25c-28.1-28.1-73.7-28.1-101.8 0zM88 64C39.4 64 0 103.4 0 152V424c0 48.6 39.4 88 88 88H360c48.6 0 88-39.4 88-88V312c0-13.3-10.7-24-24-24s-24 10.7-24 24V424c0 22.1-17.9 40-40 40H88c-22.1 0-40-17.9-40-40V152c0-22.1 17.9-40 40-40H200c13.3 0 24-10.7 24-24s-10.7-24-24-24H88z"/></svg></button><button class="icon-btn danger" data-action="deleteCard" data-id="${card.id}" title="Supprimer"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M170.5 51.6L151.5 80h145l-19-28.4c-1.5-2.2-4-3.6-6.7-3.6H177.1c-2.7 0-5.2 1.3-6.7 3.6zm147-26.6L354.2 80H368h48 8c13.3 0 24 10.7 24 24s-10.7 24-24 24h-8V432c0 44.2-35.8 80-80 80H112c-44.2 0-80-35.8-80-80V128H24c-13.3 0-24-10.7-24-24S10.7 80 24 80h8H80h13.8l36.7-55.1C140.9 9.4 158.4 0 177.1 0h93.7c18.7 0 36.2 9.4 46.6 24.9zM80 128V432c0 17.7 14.3 32 32 32H336c17.7 0 32-14.3 32-32V128H80zm80 64V400c0 8.8-7.2 16-16 16s-16-7.2-16-16V192c0-8.8 7.2-16 16-16s16 7.2 16 16zm80 0V400c0 8.8-7.2 16-16 16s-16-7.2-16-16V192c0-8.8 7.2-16 16-16s16 7.2 16 16zm80 0V400c0 8.8-7.2 16-16 16s-16-7.2-16-16V192c0-8.8 7.2-16 16-16s16 7.2 16 16z"/></svg></button></div></td></tr>`;
+                    });
+                }
+            });
+            tbody.innerHTML = html;
+            attachEventHandlers();
+        }
+
+        function updateStats() {
+            const totalInvested = cards.reduce((sum, c) => sum + c.purchasePrice, 0);
+            const unsoldCards = cards.filter(c => !c.isSold);
+            const soldCards = cards.filter(c => c.isSold);
+            const currentValue = unsoldCards.reduce((sum, c) => sum + (c.currentPrice || 0), 0);
+            const investedInUnsold = unsoldCards.reduce((sum, c) => sum + c.purchasePrice, 0);
+            const unrealizedPnL = currentValue - investedInUnsold;
+            const unrealizedPnLPercent = investedInUnsold > 0 ? (unrealizedPnL / investedInUnsold) * 100 : 0;
+            const realizedPnL = soldCards.reduce((sum, c) => sum + ((c.salePrice || 0) - c.purchasePrice), 0);
+            const totalSales = soldCards.reduce((sum, c) => sum + (c.salePrice || 0), 0);
+
+            document.getElementById('totalInvested').textContent = formatCurrency(totalInvested);
+            document.getElementById('cardCount').textContent = `${cards.length} carte${cards.length > 1 ? 's' : ''} (${unsoldCards.length} ligne${unsoldCards.length > 1 ? 's' : ''})`;
+            document.getElementById('currentValue').textContent = formatCurrency(currentValue);
+            const unrealizedEl = document.getElementById('unrealizedPnL');
+            unrealizedEl.textContent = formatCurrency(unrealizedPnL);
+            unrealizedEl.className = `stat-value ${unrealizedPnL >= 0 ? 'profit' : 'loss'}`;
+            const percentEl = document.getElementById('unrealizedPnLPercent');
+            percentEl.textContent = `${unrealizedPnL >= 0 ? '+' : ''}${unrealizedPnLPercent.toFixed(2)}%`;
+            percentEl.className = `stat-subtext ${unrealizedPnL >= 0 ? 'profit' : 'loss'}`;
+            const realizedEl = document.getElementById('realizedPnL');
+            realizedEl.textContent = formatCurrency(realizedPnL);
+            realizedEl.className = `stat-value ${realizedPnL >= 0 ? 'profit' : 'loss'}`;
+            document.getElementById('soldCount').textContent = `${soldCards.length} vendue${soldCards.length > 1 ? 's' : ''}`;
+            document.getElementById('totalExpenses').textContent = formatCurrency(totalInvested);
+            document.getElementById('totalSales').textContent = formatCurrency(totalSales);
+        }
+
+        function renderPerformers() {
+            const groups = groupCards(cards.filter(c => !c.isSold && c.currentPrice));
+            const performers = groups.map(g => ({
+                name: g.name,
+                imageUrl: g.imageUrl,
+                pnl: g.unrealizedPnL,
+                pnlPercent: g.totalInvested > 0 ? (g.unrealizedPnL / g.totalInvested) * 100 : 0
+            })).filter(p => p.pnl !== 0);
+            performers.sort((a, b) => b.pnlPercent - a.pnlPercent);
+            
+            const topPerformers = performers.slice(0, 3);
+            const worstPerformers = performers.slice(-3).reverse().filter(p => p.pnlPercent < 0);
+            
+            let html = '';
+            if (topPerformers.length > 0) {
+                html += `<div class="performers-section"><div class="section-header"><span style="color: #10b981; font-size: 1.125rem;">📈</span><div class="section-title">Meilleurs Performers</div></div>${topPerformers.map(p => `<div class="performer-card"><img src="${p.imageUrl || ''}" alt="${p.name}" class="performer-img"><div class="performer-info"><div class="performer-name">${p.name}</div><div class="performer-stats"><span class="profit"><strong>${formatCurrency(p.pnl)}</strong></span><span class="profit">${p.pnlPercent >= 0 ? '+' : ''}${p.pnlPercent.toFixed(2)}%</span></div></div></div>`).join('')}</div>`;
+            }
+            if (worstPerformers.length > 0) {
+                html += `<div class="performers-section"><div class="section-header"><span style="color: #ef4444; font-size: 1.125rem;">📉</span><div class="section-title">Pires Performers</div></div>${worstPerformers.map(p => `<div class="performer-card"><img src="${p.imageUrl || ''}" alt="${p.name}" class="performer-img"><div class="performer-info"><div class="performer-name">${p.name}</div><div class="performer-stats"><span class="loss"><strong>${formatCurrency(p.pnl)}</strong></span><span class="loss">${p.pnlPercent.toFixed(2)}%</span></div></div></div>`).join('')}</div>`;
+            }
+            if (html === '') html = '<div style="text-align: center; color: #808080; padding: 2rem;">Ajoute des cartes avec prix actuels pour voir les performances</div>';
+            document.getElementById('performersContainer').innerHTML = html;
+            attachEventHandlers();
+        }
+
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('fr-FR', {style: 'currency', currency: 'EUR'}).format(amount);
+        }
+
+        // Attach event listeners using delegation (safe for CSP and idempotent)
+        let __actionListenerAttached = false;
+        function attachEventHandlers(){
+            // only attach the global delegated handlers once
+            if (!__actionListenerAttached) {
+                __actionListenerAttached = true;
+                document.body.addEventListener('click', function(e){
+                    const btn = e.target.closest('[data-action]');
+                    if (!btn) return;
+                    const action = btn.dataset.action;
+                    if (action === 'toggleGroup') return toggleGroup(btn.dataset.key);
+                    if (action === 'cloneCard') return cloneCard(btn.dataset.id);
+                    if (action === 'editCard') return editCard(btn.dataset.id);
+                    if (action === 'deleteCard') return deleteCard(btn.dataset.id);
+                    if (action === 'updateGroupPrice') return updateGroupPrice(btn.dataset.key);
+                    if (action === 'openModal') return openModal(); if (action === 'closeModal') return closeModal();
+                });
+
+                document.body.addEventListener('change', function(e){
+                    const sel = e.target.closest('[data-role="sold-select"]');
+                    if (sel) return toggleSoldStatus(sel.dataset.id, e.target.value);
+                });
+            }
+
+            // Run immediate image sanitization for newly-inserted nodes
+            document.querySelectorAll('.card-img').forEach(img => {
+                const srcAttr = img.getAttribute('src') || '';
+                if (!srcAttr || srcAttr.includes('${') || srcAttr.includes('%7B')) {
+                    img.src = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2248%22 height=%2264%22%3E%3Crect fill=%22%234a3825%22 width=%22100%25%22 height=%22100%25%22/%3E%3C/svg%3E';
+                }
+                img.onerror = function(){ this.src = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2248%22 height=%2264%22%3E%3Crect fill=%22%234a3825%22 width=%22100%25%22 height=%22100%25%22/%3E%3C/svg%3E'; };
+            });
+            document.querySelectorAll('.performer-img').forEach(img => {
+                const srcAttr = img.getAttribute('src') || '';
+                if (!srcAttr || srcAttr.includes('${') || srcAttr.includes('%7B')) {
+                    img.src = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2240%22 height=%2256%22%3E%3Crect fill=%22%234a3825%22 width=%22100%25%22 height=%22100%25%22/%3E%3C/svg%3E';
+                }
+                img.onerror = function(){ this.src = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2240%22 height=%2256%22%3E%3Crect fill=%22%234a3825%22 width=%22100%25%22 height=%22100%25%22/%3E%3C/svg%3E'; };
+            });
+        }
+
+        // stronger sanitizer: remove stored encoded placeholders too
+        function sanitizeCardsArray(arr){
+            let changed = false;
+            arr.forEach(c => {
+                ['imageUrl','cardmarketUrl','name'].forEach(k => {
+                    if (c[k] && (typeof c[k] === 'string') && (c[k].includes('${') || c[k].includes('%7B') || c[k].trim() === '$')) { c[k] = ''; changed = true; }
+                });
+            });
+            if (changed) {
+                localStorage.setItem('pokemonCards', JSON.stringify(arr));
+                // update runtime variable
+                cards = JSON.parse(localStorage.getItem('pokemonCards') || '[]');
+            }
+        }
+
+        // One-time helper exposed on window for debugging/cleanup
+        window.clearPlaceholders = function(){
+            sanitizeCardsArray(cards);
+            renderCards();
+            updateStats();
+            updateCharts();
+            console.info('clearPlaceholders: sanitized stored cards and refreshed UI');
+        };
+
+        function getLastSixMonths() {
+            const months = [];
+            const monthNames = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Août', 'Sep', 'Oct', 'Nov', 'Déc'];
+            const now = new Date();
+            for (let i = 5; i >= 0; i--) {
+                const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+                months.push({
+                    label: monthNames[d.getMonth()],
+                    month: d.getMonth(),
+                    year: d.getFullYear()
+                });
+            }
+            return months;
+        }
+
+        function initCharts() {
+            const chartOptions = {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {legend: {labels: {color: '#b8b8b8'}}},
+                scales: {
+                    y: {ticks: {color: '#808080'}, grid: {color: '#2d2d2d'}},
+                    x: {ticks: {color: '#808080'}, grid: {color: '#2d2d2d'}}
+                }
+            };
+
+            const lastSixMonths = getLastSixMonths();
+            const labels = lastSixMonths.map(m => m.label);
+
+            const portfolioCtx = document.getElementById('portfolioChart').getContext('2d');
+            charts.portfolio = new Chart(portfolioCtx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Valeur actuelle',
+                        data: [0, 0, 0, 0, 0, 0],
+                        borderColor: '#d4af37',
+                        backgroundColor: 'rgba(212, 175, 55, 0.1)',
+                        tension: 0.4
+                    }, {
+                        label: 'Total investi',
+                        data: [0, 0, 0, 0, 0, 0],
+                        borderColor: '#6b5542',
+                        backgroundColor: 'rgba(107, 85, 66, 0.1)',
+                        tension: 0.4
+                    }]
+                },
+                options: chartOptions
+            });
+
+            const monthlyCtx = document.getElementById('monthlyChart').getContext('2d');
+            charts.monthly = new Chart(monthlyCtx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Achats',
+                        data: [0, 0, 0, 0, 0, 0],
+                        backgroundColor: '#6b5542'
+                    }, {
+                        label: 'Ventes',
+                        data: [0, 0, 0, 0, 0, 0],
+                        backgroundColor: '#d4af37'
+                    }]
+                },
+                options: chartOptions
+            });
+            updateCharts();
+        }
+
+        function updateCharts() {
+            const lastSixMonths = getLastSixMonths();
+            
+            // Données pour le graphique mensuel (Achats/Ventes par mois)
+            const purchaseData = Array(6).fill(0);
+            const saleData = Array(6).fill(0);
+            
+            // Données pour le graphique portfolio (cumul investissement/valeur)
+            const investedCumul = Array(6).fill(0);
+            const valueCumul = Array(6).fill(0);
+            
+            cards.forEach(card => {
+                const date = new Date(card.createdAt);
+                const cardMonth = date.getMonth();
+                const cardYear = date.getFullYear();
+                
+                // Trouver l'index du mois correspondant
+                const monthIndex = lastSixMonths.findIndex(m => m.month === cardMonth && m.year === cardYear);
+                
+                if (monthIndex !== -1) {
+                    purchaseData[monthIndex] += card.purchasePrice;
+                    if (card.isSold && card.salePrice) {
+                        saleData[monthIndex] += card.salePrice;
+                    }
+                }
+                
+                // Pour le cumul, on ajoute à tous les mois >= date d'achat
+                lastSixMonths.forEach((m, idx) => {
+                    const monthDate = new Date(m.year, m.month, 1);
+                    if (date <= monthDate || (cardMonth === m.month && cardYear === m.year)) {
+                        investedCumul[idx] += card.purchasePrice;
+                        if (!card.isSold) {
+                            valueCumul[idx] += (card.currentPrice || 0);
+                        }
+                    }
+                });
+            });
+            
+            // Mise à jour graphique portfolio
+            charts.portfolio.data.datasets[0].data = valueCumul;
+            charts.portfolio.data.datasets[1].data = investedCumul;
+            charts.portfolio.update();
+            
+            // Mise à jour graphique mensuel
+            charts.monthly.data.datasets[0].data = purchaseData;
+            charts.monthly.data.datasets[1].data = saleData;
+            charts.monthly.update();
+        }
+
+        // Sanitize DOM from leftover template placeholders (e.g., ${group.imageUrl})
+        function sanitizeRenderedDom() {
+            try {
+                // Fix images with unresolved placeholders
+                document.querySelectorAll('[src]').forEach(el => {
+                    const v = el.getAttribute('src');
+                    if (v && v.includes('${')) {
+                        el.setAttribute('src','data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2248%22 height=%2264%22%3E%3Crect fill=%22%234a3825%22 width=%22100%25%22 height=%22100%25%22/%3E%3C/svg%3E');
+                    }
+                });
+                // Remove bad hrefs
+                document.querySelectorAll('[href]').forEach(el => {
+                    const v = el.getAttribute('href');
+                    if (v && v.includes('${')) el.removeAttribute('href');
+                });
+                // Remove stray template fragments in text nodes
+                const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null);
+                let node;
+                while (node = walker.nextNode()) {
+                    if (node.nodeValue && node.nodeValue.includes('${')) node.nodeValue = node.nodeValue.replace(/\$\{[^}]*\}/g, '');
+                }
+            } catch (e) {
+                console.error('sanitizeRenderedDom error', e);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', sanitizeRenderedDom);
+        // Ensure sanitize runs after each render
+        const __origRenderCards = renderCards;
+        renderCards = function(){ __origRenderCards(); sanitizeRenderedDom(); sanitizeCardsArray(cards); };
+
+        document.getElementById('cardModal').addEventListener('click', (e) => {
+            if (e.target.id === 'cardModal') closeModal();
+        });
+    </script>
+</body>
+</html>
