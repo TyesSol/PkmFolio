@@ -1,0 +1,11 @@
+{
+  "name": "pkmfolio",
+  "version": "1.0.0",
+  "description": "Pokémon portfolio - static site",
+  "scripts": {
+    "start": "node serve.js",
+    "dev": "node serve.js",
+    "vercel-build": "echo 'no build step'"
+  },
+  "license": "MIT"
+}
